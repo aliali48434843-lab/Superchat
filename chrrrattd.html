@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>تطبيق علي - النسخة العالمية</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root { --primary: #0088cc; --bg: #0e1621; --header: #242f3d; }
+        body { margin: 0; background: var(--bg); color: white; font-family: sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+        
+        header { background: var(--header); padding: 10px 15px; display: flex; align-items: center; justify-content: space-between; z-index: 100; }
+        .avatar { width: 40px; height: 40px; background: var(--primary); border-radius: 50%; display: grid; place-items: center; font-weight: bold; }
+
+        #chat-view { flex: 1; overflow-y: auto; padding: 15px; background: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); background-attachment: fixed; padding-bottom: 80px; }
+        
+        .msg { max-width: 80%; padding: 10px; border-radius: 12px; margin-bottom: 8px; font-size: 15px; box-shadow: 0 1px 2px rgba(0,0,0,0.3); }
+        .me { align-self: flex-end; background: #2b5278; border-bottom-right-radius: 2px; margin-right: auto; }
+        .them { align-self: flex-start; background: #182533; border-bottom-left-radius: 2px; margin-left: auto; }
+
+        /* تعديل الشريط السفلي ليكون ثابتاً ومستقلاً */
+        .input-bar { position: fixed; bottom: 0; width: 100%; background: #242f3d; padding: 10px 5px; display: flex; align-items: center; gap: 10px; box-sizing: border-box; z-index: 200; }
+        .input-bar input { flex: 1; background: #17212b; border: 1px solid #323d4d; padding: 12px 15px; border-radius: 25px; color: white; outline: none; font-size: 16px; }
+        .send-icon { color: var(--primary); font-size: 24px; padding-left: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<header>
+    <div style="display:flex; align-items:center; gap:10px;">
+        <div class="avatar" id="init">ع</div>
+        <div><b>دردشة علي</b><br><small style="color:#40a7e3">متصل الآن</small></div>
+    </div>
+    <div style="color:var(--primary); font-size:20px; display:flex; gap:15px;">
+        <i class="fas fa-phone"></i>
+        <i class="fas fa-video"></i>
+    </div>
+</header>
+
+<div id="chat-view" style="display:flex; flex-direction:column;"></div>
+
+<div class="input-bar">
+    <i class="fas fa-image" style="color:#707579; margin-right:10px;" onclick="sendImg()"></i>
+    <input type="text" id="msgIn" placeholder="اكتب رسالتك...">
+    <i class="fas fa-paper-plane send-icon" onclick="pushMsg()"></i>
+</div>
+
+<script>
+    // بياناتك البرمجية (تأكد من مطابقتها لمشروعك)
+    const firebaseConfig = {
+        apiKey: "AIzaSyB_YOUR_KEY", 
+        databaseURL: "https://chat-pro-3cac0-default-rtdb.firebaseio.com",
+        projectId: "chat-pro-3cac0",
+        storageBucket: "chat-pro-3cac0.appspot.com",
+        messagingSenderId: "374269850123",
+        appId: "1:374269850123:web:your_id"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    let name = prompt("ما هو اسمك؟") || "زائر";
+    document.getElementById('init').innerText = name[0].toUpperCase();
+
+    function pushMsg() {
+        const input = document.getElementById('msgIn');
+        if(input.value.trim()) {
+            db.ref("messages").push().set({
+                user: name,
+                text: input.value,
+                time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+            });
+            input.value = "";
+        }
+    }
+
+    db.ref("messages").on("child_added", (s) => {
+        const d = s.val();
+        const v = document.getElementById('chat-view');
+        const m = document.createElement('div');
+        m.className = `msg ${d.user === name ? 'me' : 'them'}`;
+        m.innerHTML = `<small style="color:#40a7e3; display:block;">${d.user}</small>${d.text}<small style="display:block; opacity:0.5; font-size:10px; text-align:left;">${d.time}</small>`;
+        v.appendChild(m);
+        v.scrollTop = v.scrollHeight;
+    });
+
+    function sendImg() {
+        const url = prompt("ضع رابط الصورة هنا:");
+        if(url) {
+            db.ref("messages").push().set({ user: name, text: `<img src="${url}" style="width:100%; border-radius:10px;">`, time: new Date().toLocaleTimeString() });
+        }
+    }
+</script>
+</body>
+</html>
